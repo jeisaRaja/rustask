@@ -27,6 +27,21 @@ struct Tasks {
     tasks: Vec<Task>,
 }
 
+impl Tasks {
+    fn add_task(&mut self, task: Task) {
+        self.tasks.push(task);
+        write_to_json_store(&self).unwrap();
+    }
+
+    fn id(&self) -> i8 {
+        let len_tasks = self.tasks.len();
+        if len_tasks == 0 {
+            return 1;
+        }
+        return self.tasks[len_tasks-1].id + 1;
+    }
+}
+
 fn initiate_json_store() -> io::Result<Tasks> {
     let path = Path::new("tasks.json");
     if path.exists() {
@@ -45,6 +60,13 @@ fn initiate_json_store() -> io::Result<Tasks> {
     }
 }
 
+fn write_to_json_store(contents: &Tasks) -> io::Result<()> {
+    let path = Path::new("tasks.json");
+    let str_contents = serde_json::to_string_pretty(contents)?;
+    fs::write(path, str_contents)?;
+    Ok(())
+}
+
 fn local_time() -> DateTime<Local> {
     let utc_time: DateTime<Utc> = Utc::now();
     let local_time: DateTime<Local> = utc_time.with_timezone(&Local);
@@ -61,24 +83,31 @@ struct Cli {
 fn main() {
     let args = Cli::parse();
 
+    let mut tasks = match initiate_json_store() {
+        Ok(tasks) => tasks,
+        Err(e) => {
+            println!("Error while initiating tasks: {}", e);
+            return;
+        }
+    };
+
     match args.cmd.as_deref() {
         Some("add") => {
             if args.val == None {
-                println!("Provide the task!")
+                println!("Provide the task!");
+                return;
             }
+            let id = tasks.id();
             let task = Task {
                 name: args.val.expect("Should be a string"),
-                id: 2,
+                id,
                 created_at: local_time(),
                 status: TaskStatus::Todo,
             };
-
-            println!("{:?}", task)
+            tasks.add_task(task);
         }
         _ => {
             println!("unknown command")
         }
     }
-    local_time();
-    let _tasks = initiate_json_store();
 }
