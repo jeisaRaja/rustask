@@ -1,5 +1,6 @@
 use chrono::{DateTime, Local, Utc};
 use clap::Parser;
+use core::fmt;
 use serde::{Deserialize, Serialize};
 use std::{
     fs::{self},
@@ -12,6 +13,16 @@ enum TaskStatus {
     Done,
     Progress,
     Todo,
+}
+impl fmt::Display for TaskStatus {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let status = match self {
+            Self::Done => "[✔]",
+            Self::Progress => "[~]",
+            Self::Todo => "[ ]",
+        };
+        write!(f, "{}", status)
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -38,7 +49,29 @@ impl Tasks {
         if len_tasks == 0 {
             return 1;
         }
-        return self.tasks[len_tasks-1].id + 1;
+        return self.tasks[len_tasks - 1].id + 1;
+    }
+
+    fn mark_progress(&mut self, id: i8) {
+        for task in self.tasks.iter_mut() {
+            if task.id == id {
+                task.status = TaskStatus::Progress;
+            }
+        }
+        write_to_json_store(&self).unwrap();
+    }
+
+    fn list(&self) {
+        for task in self.tasks.iter() {
+            println!("{}", task);
+        }
+    }
+}
+
+impl fmt::Display for Task {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let desc_width = 20;
+        write!(f, " {}. {:<desc_width$} {}", self.id, self.name, self.status)
     }
 }
 
@@ -106,8 +139,25 @@ fn main() {
             };
             tasks.add_task(task);
         }
+        Some("progress") => {
+            if args.val == None {
+                println!("Provide the task!");
+                return;
+            }
+            if let Ok(id) = option_string_to_i8(args.val) {
+                tasks.mark_progress(id);
+            }
+        }
+        Some("list") => {
+            tasks.list();
+        }
         _ => {
             println!("unknown command")
         }
     }
+}
+
+fn option_string_to_i8(opt: Option<String>) -> Result<i8, std::num::ParseIntError> {
+    opt.ok_or_else(|| "No value".parse::<i8>().unwrap_err())?
+        .parse::<i8>()
 }
