@@ -2,11 +2,7 @@ use chrono::{DateTime, Local, Utc};
 use clap::Parser;
 use core::fmt;
 use serde::{Deserialize, Serialize};
-use std::{
-    fs::{self},
-    io,
-    path::Path,
-};
+use std::{fs, io, path::Path};
 
 #[derive(Debug, Deserialize, Serialize)]
 enum TaskStatus {
@@ -44,6 +40,12 @@ impl Tasks {
         write_to_json_store(&self).unwrap();
     }
 
+    fn delete_task(&mut self, id: i8) {
+        println!("deleting task {}", id);
+        self.tasks.retain(|item| item.id != id);
+        write_to_json_store(&self).unwrap();
+    }
+
     fn id(&self) -> i8 {
         let len_tasks = self.tasks.len();
         if len_tasks == 0 {
@@ -71,7 +73,11 @@ impl Tasks {
 impl fmt::Display for Task {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let desc_width = 20;
-        write!(f, " {}. {:<desc_width$} {}", self.id, self.name, self.status)
+        write!(
+            f,
+            " {}. {:<desc_width$} {}",
+            self.id, self.name, self.status
+        )
     }
 }
 
@@ -139,14 +145,21 @@ fn main() {
             };
             tasks.add_task(task);
         }
+        Some("delete") => {
+            if args.val == None {
+                println!("Provide the task id!");
+                return;
+            }
+            let id = option_string_to_i8(args.val).unwrap();
+            tasks.delete_task(id);
+        }
         Some("progress") => {
             if args.val == None {
                 println!("Provide the task!");
                 return;
             }
-            if let Ok(id) = option_string_to_i8(args.val) {
-                tasks.mark_progress(id);
-            }
+            let id = option_string_to_i8(args.val).unwrap();
+            tasks.mark_progress(id);
         }
         Some("list") => {
             tasks.list();
