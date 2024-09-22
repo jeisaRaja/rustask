@@ -1,6 +1,6 @@
 use chrono::{DateTime, Local, Utc};
 use clap::Parser;
-use std::{fs, io, path::Path};
+use std::{env::args, fs, io, path::Path};
 
 mod task {
 
@@ -66,6 +66,12 @@ mod task {
             write_to_json_store(&self).unwrap();
         }
 
+        pub fn delete_all_tasks(&mut self) {
+            println!("deleting all tasks");
+            self.tasks.clear();
+            write_to_json_store(&self).unwrap();
+        }
+
         pub fn id(&self) -> i8 {
             let len_tasks = self.tasks.len();
             if len_tasks == 0 {
@@ -78,6 +84,15 @@ mod task {
             for task in self.tasks.iter_mut() {
                 if task.id == id {
                     task.status = TaskStatus::Progress;
+                }
+            }
+            write_to_json_store(&self).unwrap();
+        }
+
+        pub fn mark_done(&mut self, id: i8) {
+            for task in self.tasks.iter_mut() {
+                if task.id == id {
+                    task.status = TaskStatus::Done;
                 }
             }
             write_to_json_store(&self).unwrap();
@@ -138,6 +153,7 @@ fn local_time() -> DateTime<Local> {
 struct Cli {
     cmd: Option<String>,
     val: Option<String>,
+    val2: Option<String>,
 }
 
 fn main() {
@@ -154,7 +170,7 @@ fn main() {
     match args.cmd.as_deref() {
         Some("add") => {
             if args.val == None {
-                println!("Provide the task!");
+                println!("Provide the task id!");
                 return;
             }
             let task_add = task::Task::new(args.val.expect("a string"), &tasks);
@@ -165,16 +181,27 @@ fn main() {
                 println!("Provide the task id!");
                 return;
             }
+            if args.val.as_deref() == Some("all") {
+                tasks.delete_all_tasks();
+                return;
+            }
             let id = option_string_to_i8(args.val).unwrap();
-            tasks.delete_task(id);
+            tasks.delete_task(id)
         }
         Some("progress") => {
             if args.val == None {
-                println!("Provide the task!");
+                println!("Provide the task id!");
                 return;
             }
             let id = option_string_to_i8(args.val).unwrap();
             tasks.mark_progress(id);
+        }
+        Some("done") => {
+            if args.val == None {
+                println!("Provide the task id!")
+            }
+            let id = option_string_to_i8(args.val).unwrap();
+            tasks.mark_done(id);
         }
         Some("list") => {
             tasks.list();
