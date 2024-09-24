@@ -1,6 +1,6 @@
 use chrono::{DateTime, Local, Utc};
 use clap::Parser;
-use std::{env::args, fs, io, path::Path};
+use std::{fs, io, path::Path};
 
 mod task {
 
@@ -101,6 +101,28 @@ mod task {
         pub fn list(&self) {
             for task in self.tasks.iter() {
                 println!("{}", task);
+            }
+        }
+
+        pub fn list_done(&self) {
+            for task in self.tasks.iter() {
+                if let TaskStatus::Done = task.status {
+                    println!("{}", task)
+                }
+            }
+        }
+        pub fn list_progress(&self) {
+            for task in self.tasks.iter() {
+                if let TaskStatus::Progress = task.status {
+                    println!("{}", task)
+                }
+            }
+        }
+        pub fn list_todo(&self) {
+            for task in self.tasks.iter() {
+                if let TaskStatus::Todo = task.status {
+                    println!("{}", task)
+                }
             }
         }
     }
@@ -204,7 +226,15 @@ fn main() {
             tasks.mark_done(id);
         }
         Some("list") => {
-            tasks.list();
+            if args.val == Some("done".to_string()) {
+                tasks.list_done();
+            } else if args.val == Some("progress".to_string()) {
+                tasks.list_progress();
+            } else if args.val == Some("todo".to_string()) {
+                tasks.list_todo();
+            } else {
+                tasks.list();
+            }
         }
         _ => {
             println!("unknown command")
