@@ -125,6 +125,18 @@ mod task {
                 }
             }
         }
+        pub fn update_task(&mut self, id: i8, name: String) {
+            if id < 1 {
+                println!("ID cannot be less than 0");
+            }
+            if let Some(task) = self.tasks.get_mut((id - 1) as usize) {
+                task.name = name;
+                println!("{}", task);
+                write_to_json_store(self).unwrap();
+            } else {
+                println!("Task not found");
+            }
+        }
     }
 
     impl fmt::Display for Task {
@@ -142,7 +154,6 @@ mod task {
 fn initiate_json_store() -> io::Result<task::Tasks> {
     let path = Path::new("tasks.json");
     if path.exists() {
-        println!("tasks.json exists!");
         let json_file = fs::read_to_string(path)?;
         let tasks: task::Tasks = serde_json::from_str(&json_file)?;
 
@@ -234,6 +245,12 @@ fn main() {
                 tasks.list_todo();
             } else {
                 tasks.list();
+            }
+        }
+        Some("update") => {
+            let id = option_string_to_i8(args.val).unwrap();
+            if let Some(name) = args.val2 {
+                tasks.update_task(id, name)
             }
         }
         _ => {
