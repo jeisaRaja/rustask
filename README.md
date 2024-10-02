@@ -13,7 +13,7 @@ A simple command-line interface (CLI) tool to track and manage tasks. This proje
 
 1. Clone or download this repository to your local machine.
 2. Navigate to the project directory.
-3. Compile or run the project based on the programming language you're using.
+3. Compile with `cargo build --release`
 
 
 ## Usage
