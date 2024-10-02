@@ -33,6 +33,8 @@ mod task {
         name: String,
         status: TaskStatus,
         created_at: DateTime<Local>,
+        updated_at: DateTime<Local>,
+        description: Option<String>,
     }
 
     impl Task {
@@ -41,7 +43,9 @@ mod task {
                 id: tasks.id(),
                 name,
                 created_at: local_time(),
+                updated_at: local_time(),
                 status: TaskStatus::Todo,
+                description: Some("".to_string()),
             };
         }
     }
@@ -131,6 +135,7 @@ mod task {
             }
             if let Some(task) = self.tasks.get_mut((id - 1) as usize) {
                 task.name = name;
+                task.updated_at = local_time();
                 println!("{}", task);
                 write_to_json_store(self).unwrap();
             } else {
